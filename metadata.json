@@ -1,0 +1,9 @@
+{
+  "name": "Addb Sovereign",
+  "description": "A secure, multi-cloud infrastructure management platform for sovereign data control.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}

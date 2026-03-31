@@ -1,0 +1,144 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System user with role-based access control.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["SYSTEM_ADMIN", "DEVOPS_ENGINEER", "CLOUD_ENGINEER", "APPROVER", "VIEWER"] },
+        "scope": { 
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tenantId": { "type": "string" },
+              "cloudProjectId": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["id", "email", "role"]
+    },
+    "Deployment": {
+      "title": "Deployment",
+      "description": "Record of a system deployment.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "env": { "type": "string" },
+        "status": { "type": "string", "enum": ["success", "failed", "in-progress", "pending-approval"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "version": { "type": "string" },
+        "duration": { "type": "string" },
+        "severity": { "type": "string", "enum": ["MAJOR", "MINOR"] },
+        "costEstimate": { "type": "number" },
+        "logs": { "type": "array", "items": { "type": "string" } },
+        "issueIdentified": { "type": "string" },
+        "fixApplied": { "type": "string" }
+      },
+      "required": ["id", "env", "status", "timestamp"]
+    },
+    "ChatSession": {
+      "title": "ChatSession",
+      "description": "A chat session between a user and the ADDB agent.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A single message in a chat session.",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" },
+        "sessionId": { "type": "string" }
+      },
+      "required": ["role", "content", "timestamp"]
+    },
+    "Ticket": {
+      "title": "Ticket",
+      "description": "A user-submitted request for system evolution.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userMessage": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["OPEN", "IN_PROGRESS", "RESOLVED"] },
+        "evolutionProposal": { "type": "string" }
+      },
+      "required": ["userId", "userMessage", "timestamp", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System notification or alert.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["APPROVAL_REQUEST", "SYSTEM_ALERT", "DEPLOYMENT_SUCCESS"] },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" },
+        "severity": { "type": "string", "enum": ["MAJOR", "MINOR", "CRITICAL"] },
+        "userId": { "type": "string" }
+      },
+      "required": ["type", "title", "message", "timestamp", "read", "userId"]
+    },
+    "SystemSuggestion": {
+      "title": "SystemSuggestion",
+      "description": "AI-generated suggestion for system improvement.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "impact": { "type": "string", "enum": ["high", "medium", "low"] },
+        "category": { "type": "string", "enum": ["cost", "security", "reliability", "performance"] }
+      },
+      "required": ["title", "description", "impact"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile and role information."
+    },
+    "/deployments/{deploymentId}": {
+      "schema": "Deployment",
+      "description": "Deployment history and status."
+    },
+    "/chat_sessions/{sessionId}": {
+      "schema": "ChatSession",
+      "description": "Chat session metadata."
+    },
+    "/chat_sessions/{sessionId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Messages within a chat session."
+    },
+    "/tickets/{ticketId}": {
+      "schema": "Ticket",
+      "description": "System evolution tickets."
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User notifications."
+    },
+    "/system_suggestions/{suggestionId}": {
+      "schema": "SystemSuggestion",
+      "description": "AI-generated suggestions."
+    }
+  }
+}

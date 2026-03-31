@@ -1,0 +1,268 @@
+{
+  "entities": {
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A single message in a chat session.",
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["user", "model"],
+          "description": "The role of the message sender."
+        },
+        "content": {
+          "type": "string",
+          "description": "The text content of the message."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the message was sent."
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "The ID of the chat session."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns this message."
+        }
+      },
+      "required": ["role", "content", "timestamp", "sessionId", "userId"]
+    },
+    "ChatSession": {
+      "title": "ChatSession",
+      "description": "A collection of messages representing a single conversation.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique ID of the session."
+        },
+        "title": {
+          "type": "string",
+          "description": "A short, 4-word title for the session."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns this session."
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the session was last modified."
+        }
+      },
+      "required": ["id", "title", "userId", "lastUpdated"]
+    },
+    "Ticket": {
+      "title": "Ticket",
+      "description": "A support or evolution request ticket.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userMessage": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["OPEN", "IN_PROGRESS", "RESOLVED"] },
+        "evolutionProposal": { "type": "string" }
+      },
+      "required": ["id", "userId", "userMessage", "timestamp", "status"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "A record of a system action.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "action": { "type": "string" },
+        "userId": { "type": "string" },
+        "userRole": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["id", "timestamp", "action", "userId", "userRole"]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "User feedback on a deployment.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "deploymentId": { "type": "string" },
+        "feedback": { "type": "string" },
+        "userId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "deploymentId", "feedback", "userId", "timestamp"]
+    },
+    "ApprovalRequest": {
+      "title": "ApprovalRequest",
+      "description": "A request for deployment approval.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "deploymentId": { "type": "string" },
+        "planContent": { "type": "string" },
+        "requestedBy": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] }
+      },
+      "required": ["id", "deploymentId", "planContent", "requestedBy", "timestamp", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "A system notification for a user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" },
+        "severity": { "type": "string", "enum": ["MINOR", "MAJOR", "CRITICAL"] },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "type", "title", "message", "timestamp", "read", "severity"]
+    },
+    "Deployment": {
+      "title": "Deployment",
+      "description": "A record of a deployment.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "env": { "type": "string" },
+        "status": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "version": { "type": "string" },
+        "duration": { "type": "string" },
+        "error": { "type": "string" },
+        "logs": { "type": "array", "items": { "type": "string" } },
+        "issueIdentified": { "type": "string" },
+        "fixApplied": { "type": "string" },
+        "severity": { "type": "string", "enum": ["MAJOR", "MINOR"] },
+        "costEstimate": { "type": "number" }
+      },
+      "required": ["id", "env", "status", "timestamp", "version", "logs"]
+    },
+    "SystemSuggestion": {
+      "title": "SystemSuggestion",
+      "description": "An AI-generated suggestion for system optimization.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "impact": { "type": "string", "enum": ["high", "medium", "low"] }
+      },
+      "required": ["id", "title", "description", "impact"]
+    },
+    "User": {
+      "title": "User",
+      "description": "A system user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["SYSTEM_ADMIN", "CLOUD_ENGINEER", "DEVOPS_ENGINEER", "APPROVER"] },
+        "scope": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["id", "name", "email", "role"]
+    },
+    "Release": {
+      "title": "Release",
+      "description": "A system release record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "version": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "summary": { "type": "string" },
+        "type": { "type": "string", "enum": ["FIX", "FEATURE", "SYSTEM_UPDATE"] }
+      },
+      "required": ["id", "version", "timestamp", "summary", "type"]
+    },
+    "Repository": {
+      "title": "Repository",
+      "description": "A connected code repository.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "platform": { "type": "string", "enum": ["github", "gitlab", "bitbucket"] },
+        "url": { "type": "string" },
+        "intelligence": { "type": "object" }
+      },
+      "required": ["id", "name", "platform", "url"]
+    },
+    "SystemState": {
+      "title": "SystemState",
+      "description": "Global system state.",
+      "type": "object",
+      "properties": {
+        "systemStatus": { "type": "string", "enum": ["RUNNING", "STOPPED", "UPDATING"] },
+        "systemVersion": { "type": "string" },
+        "architectureData": { "type": "object" },
+        "infraMap": { "type": "object" },
+        "activeTerminalLogs": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["systemStatus", "systemVersion"]
+    }
+  },
+  "firestore": {
+    "/chat_sessions/{sessionId}": {
+      "schema": "ChatSession",
+      "description": "Stores metadata for chat sessions."
+    },
+    "/chat_sessions/{sessionId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Stores individual messages within a chat session."
+    },
+    "/tickets/{ticketId}": {
+      "schema": "Ticket",
+      "description": "Stores support tickets."
+    },
+    "/audit_logs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Stores system audit logs."
+    },
+    "/feedbacks/{feedbackId}": {
+      "schema": "Feedback",
+      "description": "Stores user feedback."
+    },
+    "/approvals/{approvalId}": {
+      "schema": "ApprovalRequest",
+      "description": "Stores deployment approval requests."
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Stores user notifications."
+    },
+    "/deployments/{deploymentId}": {
+      "schema": "Deployment",
+      "description": "Stores deployment records."
+    },
+    "/system_suggestions/{suggestionId}": {
+      "schema": "SystemSuggestion",
+      "description": "Stores AI system suggestions."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Stores system users."
+    },
+    "/releases/{releaseId}": {
+      "schema": "Release",
+      "description": "Stores system release records."
+    },
+    "/repositories/{repoId}": {
+      "schema": "Repository",
+      "description": "Stores connected repositories."
+    },
+    "/system_state/global": {
+      "schema": "SystemState",
+      "description": "Stores global system state."
+    }
+  }
+}

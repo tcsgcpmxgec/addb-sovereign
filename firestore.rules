@@ -1,0 +1,239 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        ((request.auth.token.email == "navaneeth.j08@gmail.com" && request.auth.token.email_verified == true) ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SYSTEM_ADMIN'));
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasOnlyAllowedFields(data, allowedFields) {
+      return data.keys().hasOnly(allowedFields);
+    }
+
+    function hasRequiredFields(data, requiredFields) {
+      return data.keys().hasAll(requiredFields);
+    }
+
+    function isValidSession(data) {
+      return hasRequiredFields(data, ['userId', 'title', 'createdAt', 'updatedAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.userId == request.auth.uid &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    function isValidUser(data) {
+      return hasRequiredFields(data, ['id', 'name', 'email', 'role', 'scope']) &&
+             hasOnlyAllowedFields(data, ['id', 'name', 'email', 'role', 'scope']) &&
+             data.id == request.auth.uid &&
+             data.name is string && data.name.size() > 0 &&
+             isValidEmail(data.email) &&
+             data.role in ['SYSTEM_ADMIN', 'APPROVER', 'DEVOPS_ENGINEER', 'CLOUD_ENGINEER', 'VIEWER'] &&
+             data.scope is list;
+    }
+
+    function isValidMessage(data) {
+      return hasRequiredFields(data, ['role', 'content', 'timestamp', 'userId', 'sessionId']) &&
+             hasOnlyAllowedFields(data, ['role', 'content', 'timestamp', 'userId', 'sessionId', 'id']) &&
+             data.role in ['user', 'model'] &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 10000 &&
+             data.timestamp is string &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidTicket(data) {
+      return hasRequiredFields(data, ['userId', 'userMessage', 'timestamp', 'status']) &&
+             hasOnlyAllowedFields(data, ['userId', 'userMessage', 'timestamp', 'status', 'evolutionProposal', 'id']) &&
+             data.userId == request.auth.uid &&
+             data.userMessage is string && data.userMessage.size() > 0 && data.userMessage.size() < 5000 &&
+             data.timestamp is string &&
+             data.status in ['OPEN', 'IN_PROGRESS', 'RESOLVED'] &&
+             (!('evolutionProposal' in data) || data.evolutionProposal is string);
+    }
+
+    function isValidAuditLog(data) {
+      return hasRequiredFields(data, ['timestamp', 'action', 'userId', 'userRole']) &&
+             hasOnlyAllowedFields(data, ['timestamp', 'action', 'userId', 'userRole']) &&
+             data.timestamp is string &&
+             data.action is string &&
+             data.userId == request.auth.uid &&
+             data.userRole is string;
+    }
+
+    function isValidFeedback(data) {
+      return hasRequiredFields(data, ['deploymentId', 'feedback', 'userId', 'timestamp']) &&
+             hasOnlyAllowedFields(data, ['deploymentId', 'feedback', 'userId', 'timestamp']) &&
+             data.deploymentId is string &&
+             data.feedback is string && data.feedback.size() > 0 && data.feedback.size() < 2000 &&
+             data.userId == request.auth.uid &&
+             data.timestamp is string;
+    }
+
+    function isValidApproval(data) {
+      return hasRequiredFields(data, ['deploymentId', 'planContent', 'requestedBy', 'timestamp', 'status']) &&
+             hasOnlyAllowedFields(data, ['deploymentId', 'planContent', 'requestedBy', 'timestamp', 'status']) &&
+             data.deploymentId is string &&
+             data.planContent is string &&
+             data.requestedBy == request.auth.uid &&
+             data.timestamp is string &&
+             data.status in ['PENDING', 'APPROVED', 'REJECTED'];
+    }
+
+    function isValidNotification(data) {
+      return hasRequiredFields(data, ['type', 'title', 'message', 'timestamp', 'read', 'severity', 'userId']) &&
+             hasOnlyAllowedFields(data, ['type', 'title', 'message', 'timestamp', 'read', 'severity', 'userId']) &&
+             data.type is string &&
+             data.title is string &&
+             data.message is string &&
+             data.timestamp is string &&
+             data.read is bool &&
+             data.severity in ['MINOR', 'MAJOR', 'CRITICAL'] &&
+             data.userId is string;
+    }
+
+    function isValidRepository(data) {
+      return hasRequiredFields(data, ['name', 'platform', 'url']) &&
+             hasOnlyAllowedFields(data, ['name', 'platform', 'url']) &&
+             data.name is string && data.name.size() > 0 &&
+             data.platform in ['github', 'gitlab', 'bitbucket'] &&
+             data.url is string && isValidUrl(data.url);
+    }
+
+    function isValidDeployment(data) {
+      return hasRequiredFields(data, ['env', 'status', 'timestamp', 'version']) &&
+             hasOnlyAllowedFields(data, ['env', 'status', 'timestamp', 'version', 'logs', 'issueIdentified', 'fixApplied', 'duration', 'severity', 'costEstimate', 'tenantId', 'cloudProvider', 'diff', 'id']) &&
+             data.env is string &&
+             data.status in ['success', 'failed', 'pending', 'in-progress', 'pending-approval'] &&
+             data.timestamp is string &&
+             data.version is string;
+    }
+
+    function isValidSuggestion(data) {
+      return hasRequiredFields(data, ['title', 'description', 'impact']) &&
+             hasOnlyAllowedFields(data, ['title', 'description', 'impact', 'category', 'id']) &&
+             data.title is string && data.title.size() > 0 &&
+             data.description is string &&
+             data.impact in ['high', 'medium', 'low'] &&
+             (!('category' in data) || data.category in ['cost', 'security', 'reliability', 'performance']);
+    }
+
+    function isValidRelease(data) {
+      return hasRequiredFields(data, ['version', 'timestamp', 'type']) &&
+             hasOnlyAllowedFields(data, ['version', 'timestamp', 'type', 'summary', 'id']) &&
+             data.version is string &&
+             data.timestamp is string &&
+             data.type in ['FIX', 'FEATURE', 'SYSTEM_UPDATE'];
+    }
+
+    // ===============================================================
+    // Collections
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'DEVOPS_ENGINEER' || isAdmin());
+      allow update: if isAdmin() || (isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role);
+    }
+
+    match /system_state/{stateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /repositories/{repoId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /deployments/{depId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /system_suggestions/{sugId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /releases/{relId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /chat_sessions/{sessionId} {
+      allow read: if isAdmin() || isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && 
+                      isValidSession(request.resource.data) &&
+                      request.resource.data.createdAt == request.time &&
+                      request.resource.data.updatedAt == request.time;
+      allow update: if isAdmin() || (isOwner(resource.data.userId) && 
+                      isValidSession(request.resource.data) &&
+                      request.resource.data.createdAt == resource.data.createdAt &&
+                      request.resource.data.updatedAt == request.time);
+      allow delete: if isAdmin() || isOwner(resource.data.userId);
+
+      match /messages/{messageId} {
+        allow read: if isAdmin() || isOwner(get(/databases/$(database)/documents/chat_sessions/$(sessionId)).data.userId);
+        allow create: if isAuthenticated() && isValidMessage(request.resource.data);
+        allow update: if false;
+        allow delete: if isAdmin() || isOwner(get(/databases/$(database)/documents/chat_sessions/$(sessionId)).data.userId);
+      }
+    }
+
+    match /tickets/{ticketId} {
+      allow read: if isAdmin() || isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isValidTicket(request.resource.data);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated() && isValidAuditLog(request.resource.data);
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    match /feedbacks/{feedbackId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated() && isValidFeedback(request.resource.data);
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /approvals/{approvalId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAdmin();
+      allow update: if isOwner(resource.data.userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if isOwner(resource.data.userId);
+    }
+  }
+}
